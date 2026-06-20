@@ -41,6 +41,15 @@ const WEATHER_BACKGROUNDS = {
   foggy: 'https://images.unsplash.com/photo-1487621167305-5d248087c724?auto=format&fit=crop&w=1920&q=80',
 };
 
+// Preset high-resolution desktop wallpapers
+const PRESET_WALLPAPERS = {
+  clearDay: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80',
+  rainy: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=1920&q=80',
+  snowy: 'https://images.unsplash.com/photo-1485594050903-8e8ee7b071a8?auto=format&fit=crop&w=1920&q=80',
+  thunderstorm: 'https://images.unsplash.com/photo-1492011221367-f47e3ccd77a0?auto=format&fit=crop&w=1920&q=80',
+  starry: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1920&q=80',
+};
+
 function App() {
   const [city, setCity] = useState('');
   const [weather, setWeather] = useState(null);
@@ -54,6 +63,14 @@ function App() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [activeTab, setActiveTab] = useState('temp'); // 'temp', 'precip'
+  
+  // Custom Background States
+  const [bgSource, setBgSource] = useState('dynamic'); // 'dynamic', 'preset', 'custom'
+  const [activePreset, setActivePreset] = useState('clearDay');
+  const [customBgUrl, setCustomBgUrl] = useState('');
+  const [bgBlur, setBgBlur] = useState(3); // default 3px blur
+  const [bgDarkness, setBgDarkness] = useState(45); // default 45% darkness
+  const [showBgSettings, setShowBgSettings] = useState(false);
 
   const searchInputRef = useRef(null);
 
@@ -311,6 +328,13 @@ function App() {
   };
 
   const getActiveBg = () => {
+    if (bgSource === 'custom' && customBgUrl) {
+      return customBgUrl;
+    }
+    if (bgSource === 'preset') {
+      return PRESET_WALLPAPERS[activePreset] || WEATHER_BACKGROUNDS.clearDay;
+    }
+    // Dynamic background
     if (bgType === 'city' && cityImage) {
       return cityImage;
     }
@@ -397,7 +421,14 @@ function App() {
     <>
       {/* Background visual styles & moving ambient blobs */}
       <div className="app-bg-wrapper" style={{ backgroundImage: `url(${getActiveBg()})` }} />
-      <div className="app-bg-overlay" />
+      <div 
+        className="app-bg-overlay" 
+        style={{
+          backdropFilter: `blur(${bgBlur}px) saturate(120%)`,
+          WebkitBackdropFilter: `blur(${bgBlur}px) saturate(120%)`,
+          background: `radial-gradient(circle at 50% 20%, rgba(15, 23, 42, ${(bgDarkness / 100) * 0.75}) 0%, rgba(15, 23, 42, ${(bgDarkness / 100) * 0.98}) 100%)`
+        }}
+      />
       <div className="bg-blobs">
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
@@ -455,24 +486,18 @@ function App() {
 
           {/* Controls */}
           <div className="controls">
-            {cityImage && (
-              <div className="bg-toggle-switch">
-                <button
-                  className={`bg-toggle-btn ${bgType === 'city' ? 'active' : ''}`}
-                  onClick={() => setBgType('city')}
-                  title="Show searched city photo"
-                >
-                  City View
-                </button>
-                <button
-                  className={`bg-toggle-btn ${bgType === 'weather' ? 'active' : ''}`}
-                  onClick={() => setBgType('weather')}
-                  title="Show weather animation background"
-                >
-                  Weather View
-                </button>
-              </div>
-            )}
+            <button
+              className={`fav-toggle-btn glass ${showBgSettings ? 'active' : ''}`}
+              onClick={() => {
+                setShowBgSettings(!showBgSettings);
+                setShowFavoritesOnly(false); // Close favorites if open
+              }}
+              title="Configure background image settings"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Eye size={18} />
+              <span>Background</span>
+            </button>
 
             <div className="unit-switch" onClick={() => setIsCelsius(!isCelsius)}>
               <span className={isCelsius ? 'active' : ''}>°C</span>
@@ -484,13 +509,184 @@ function App() {
 
             <button
               className={`fav-toggle-btn glass ${showFavoritesOnly ? 'active' : ''}`}
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              onClick={() => {
+                setShowFavoritesOnly(!showFavoritesOnly);
+                setShowBgSettings(false); // Close bg settings if open
+              }}
             >
               <Star size={18} fill={showFavoritesOnly ? '#f59e0b' : 'none'} className="fav-star" />
               <span>Saved</span>
             </button>
           </div>
         </header>
+
+        {/* Background Settings Customize Panel */}
+        {showBgSettings && (
+          <div className="bg-settings-panel glass animate-slide-down">
+            <div className="panel-header">
+              <h3>Background Settings</h3>
+              <button className="close-panel-btn" onClick={() => setShowBgSettings(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="settings-content">
+              {/* Image Source Selection */}
+              <div className="setting-group">
+                <span className="setting-title">Image Source</span>
+                <div className="source-tabs">
+                  <button 
+                    className={`tab-btn ${bgSource === 'dynamic' ? 'active' : ''}`}
+                    onClick={() => setBgSource('dynamic')}
+                  >
+                    Dynamic
+                  </button>
+                  <button 
+                    className={`tab-btn ${bgSource === 'preset' ? 'active' : ''}`}
+                    onClick={() => setBgSource('preset')}
+                  >
+                    Presets
+                  </button>
+                  <button 
+                    className={`tab-btn ${bgSource === 'custom' ? 'active' : ''}`}
+                    onClick={() => setBgSource('custom')}
+                  >
+                    Custom URL
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic View Option */}
+              {bgSource === 'dynamic' && (
+                <div className="setting-group">
+                  <span className="setting-title">Dynamic Layer Priority</span>
+                  <div className="bg-toggle-switch">
+                    <button
+                      className={`bg-toggle-btn ${bgType === 'city' ? 'active' : ''}`}
+                      onClick={() => setBgType('city')}
+                      title="Show searched city photo if available"
+                    >
+                      City View (Teleport)
+                    </button>
+                    <button
+                      className={`bg-toggle-btn ${bgType === 'weather' ? 'active' : ''}`}
+                      onClick={() => setBgType('weather')}
+                      title="Show weather animation background"
+                    >
+                      Weather View (Unsplash)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Preset Selection Grid */}
+              {bgSource === 'preset' && (
+                <div className="setting-group">
+                  <span className="setting-title">Select Preset Wallpaper</span>
+                  <div className="presets-grid">
+                    <button 
+                      className={`preset-thumb ${activePreset === 'clearDay' ? 'active' : ''}`}
+                      style={{ backgroundImage: `url(${PRESET_WALLPAPERS.clearDay})` }}
+                      onClick={() => setActivePreset('clearDay')}
+                      title="Clear Day"
+                    >
+                      <span>Sunny</span>
+                    </button>
+                    <button 
+                      className={`preset-thumb ${activePreset === 'rainy' ? 'active' : ''}`}
+                      style={{ backgroundImage: `url(${PRESET_WALLPAPERS.rainy})` }}
+                      onClick={() => setActivePreset('rainy')}
+                      title="Rainy Window"
+                    >
+                      <span>Rainy</span>
+                    </button>
+                    <button 
+                      className={`preset-thumb ${activePreset === 'snowy' ? 'active' : ''}`}
+                      style={{ backgroundImage: `url(${PRESET_WALLPAPERS.snowy})` }}
+                      onClick={() => setActivePreset('snowy')}
+                      title="Snow Forest"
+                    >
+                      <span>Snowy</span>
+                    </button>
+                    <button 
+                      className={`preset-thumb ${activePreset === 'thunderstorm' ? 'active' : ''}`}
+                      style={{ backgroundImage: `url(${PRESET_WALLPAPERS.thunderstorm})` }}
+                      onClick={() => setActivePreset('thunderstorm')}
+                      title="Thunderstorm"
+                    >
+                      <span>Storm</span>
+                    </button>
+                    <button 
+                      className={`preset-thumb ${activePreset === 'starry' ? 'active' : ''}`}
+                      style={{ backgroundImage: `url(${PRESET_WALLPAPERS.starry})` }}
+                      onClick={() => setActivePreset('starry')}
+                      title="Nebula Cosmos"
+                    >
+                      <span>Cosmos</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Custom Image URL Input */}
+              {bgSource === 'custom' && (
+                <div className="setting-group">
+                  <span className="setting-title">Custom Wallpaper URL</span>
+                  <div className="custom-url-box">
+                    <input 
+                      type="text" 
+                      placeholder="Paste image link (e.g. https://images.unsplash.com/...)" 
+                      value={customBgUrl}
+                      onChange={(e) => setCustomBgUrl(e.target.value)}
+                    />
+                    <button 
+                      className="apply-url-btn"
+                      onClick={() => {
+                        if (customBgUrl.trim()) {
+                          setCustomBgUrl(customBgUrl.trim());
+                        }
+                      }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Real-time Blurring and Contrast Sliders */}
+              <div className="sliders-row">
+                <div className="slider-control">
+                  <div className="slider-label">
+                    <span>Background Blur</span>
+                    <span>{bgBlur}px</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="15" 
+                    value={bgBlur} 
+                    onChange={(e) => setBgBlur(Number(e.target.value))} 
+                  />
+                </div>
+
+                <div className="slider-control">
+                  <div className="slider-label">
+                    <span>Overlay Darkness</span>
+                    <span>{bgDarkness}%</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="10" 
+                    max="90" 
+                    value={bgDarkness} 
+                    onChange={(e) => setBgDarkness(Number(e.target.value))} 
+                  />
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* Saved/Favorites Cities Sidebar/Panel */}
         {showFavoritesOnly && (
