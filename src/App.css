@@ -1009,6 +1009,8 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+  min-width: 90px;
 }
 
 .aqi-value {
@@ -1018,10 +1020,15 @@
 }
 
 .aqi-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   margin-top: -2px;
+  text-align: center;
+  max-width: 80px;
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.1;
 }
 
 .aqi-pollutants {
@@ -1029,6 +1036,7 @@
   flex-direction: column;
   gap: 0.6rem;
   flex: 1;
+  min-width: 0;
 }
 
 .pollutant {
@@ -1048,6 +1056,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: white;
+  white-space: nowrap;
 }
 
 .aqi-message {
